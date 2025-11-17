@@ -382,6 +382,23 @@ export function initializeDatabase() {
     );
   `);
 
+  // Tabla de usuarios (sistema de autenticación)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      rol TEXT NOT NULL CHECK(rol IN ('admin', 'usuario', 'visor')),
+      rut TEXT,
+      telefono TEXT,
+      activo INTEGER DEFAULT 1,
+      ultimo_acceso DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Índices para mejorar rendimiento
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_documentos_tipo_folio ON documentos(tipo_documento, folio);
@@ -393,6 +410,8 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_libros_periodo ON libros_electronicos(periodo, tipo_libro);
     CREATE INDEX IF NOT EXISTS idx_retenciones_periodo ON retenciones(periodo_tributario);
     CREATE INDEX IF NOT EXISTS idx_dj_periodo ON declaraciones_juradas(periodo);
+    CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+    CREATE INDEX IF NOT EXISTS idx_usuarios_rol ON usuarios(rol);
   `);
 
   // Insertar recordatorios por defecto
@@ -402,7 +421,7 @@ export function initializeDatabase() {
   insertDefaultDeclaracionesJuradas(db);
 
   console.log('✅ Base de datos inicializada correctamente');
-  console.log('📚 Tablas creadas: documentos, compras, libros_electronicos, retenciones, declaraciones_juradas');
+  console.log('📚 Tablas creadas: documentos, compras, libros_electronicos, retenciones, declaraciones_juradas, usuarios');
 
   return db;
 }

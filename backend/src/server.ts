@@ -4,6 +4,7 @@ import { config, validateConfig } from './config';
 import { initializeDatabase } from './database/schema';
 import routes from './routes';
 import { ReminderService } from './services/reminder.service';
+import { AuthService } from './services/auth.service';
 
 // Inicializar aplicación
 const app = express();
@@ -34,10 +35,13 @@ app.get('/', (req, res) => {
     description: 'Sistema de gestión financiera y tributaria para Chile (SII)',
     endpoints: {
       health: '/api/health',
+      auth: '/api/auth',
+      upload: '/api/upload',
       dte: '/api/dte',
       compras: '/api/compras',
       recordatorios: '/api/recordatorios',
       notificaciones: '/api/notificaciones',
+      libros: '/api/libros',
     },
     environment: config.sii.environment,
   });
@@ -73,6 +77,11 @@ async function startServer() {
     console.log('📊 Inicializando base de datos...');
     initializeDatabase();
 
+    // Crear usuario administrador por defecto
+    console.log('👤 Verificando usuario administrador...');
+    const authService = new AuthService();
+    await authService.crearAdminDefault();
+
     // Procesar recordatorios al inicio y cada hora
     console.log('🔔 Configurando procesamiento de recordatorios...');
     const reminderService = new ReminderService();
@@ -92,13 +101,19 @@ async function startServer() {
       console.log(`🔐 Ambiente SII: ${config.sii.environment}`);
       console.log('\n💡 Endpoints disponibles:');
       console.log(`   - GET  /api/health`);
+      console.log(`   - POST /api/auth/register`);
+      console.log(`   - POST /api/auth/login`);
+      console.log(`   - POST /api/upload/factura (OCR automático)`);
+      console.log(`   - POST /api/upload/gasto (OCR automático)`);
       console.log(`   - GET  /api/dte`);
       console.log(`   - POST /api/dte`);
       console.log(`   - GET  /api/compras`);
       console.log(`   - POST /api/compras`);
       console.log(`   - GET  /api/recordatorios`);
       console.log(`   - GET  /api/notificaciones`);
-      console.log('\n📖 Documentación completa en README.md\n');
+      console.log(`   - GET  /api/libros`);
+      console.log('\n📖 Documentación completa en README.md');
+      console.log('🔐 Usuario admin por defecto: admin@finanzas.cl / admin123\n');
     });
   } catch (error) {
     console.error('❌ Error al iniciar servidor:', error);
