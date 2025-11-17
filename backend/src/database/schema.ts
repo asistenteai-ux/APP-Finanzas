@@ -229,6 +229,159 @@ export function initializeDatabase() {
     );
   `);
 
+  // Tabla de remuneraciones
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS remuneraciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trabajador_rut TEXT NOT NULL,
+      trabajador_nombre TEXT NOT NULL,
+      periodo TEXT NOT NULL,
+      sueldo_base REAL NOT NULL,
+      total_haberes REAL NOT NULL,
+      total_descuentos REAL NOT NULL,
+      sueldo_liquido REAL NOT NULL,
+      afp REAL NOT NULL,
+      salud REAL NOT NULL,
+      cesantia REAL NOT NULL,
+      impuesto_unico REAL NOT NULL DEFAULT 0,
+      cesantia_empleador REAL NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'pagado')),
+      fecha_pago DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(trabajador_rut, periodo)
+    );
+  `);
+
+  // Tabla de activos fijos
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS activos_fijos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      categoria TEXT NOT NULL,
+      fecha_adquisicion DATE NOT NULL,
+      valor_compra REAL NOT NULL,
+      vida_util_anos INTEGER NOT NULL,
+      depreciacion_anual REAL NOT NULL,
+      depreciacion_mensual REAL NOT NULL,
+      depreciacion_acumulada REAL NOT NULL DEFAULT 0,
+      valor_libro REAL NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'activo' CHECK(estado IN ('activo', 'vendido', 'dado_baja')),
+      proveedor_rut TEXT,
+      proveedor_nombre TEXT,
+      numero_factura TEXT,
+      observaciones TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Tabla de depreciaciones (historial)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS depreciaciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      activo_id INTEGER NOT NULL,
+      periodo TEXT NOT NULL,
+      monto REAL NOT NULL,
+      depreciacion_acumulada REAL NOT NULL,
+      valor_libro REAL NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (activo_id) REFERENCES activos_fijos(id) ON DELETE CASCADE,
+      UNIQUE(activo_id, periodo)
+    );
+  `);
+
+  // Tabla de contratos (honorarios, leasing, arriendos)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS contratos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tipo TEXT NOT NULL CHECK(tipo IN ('HONORARIOS', 'LEASING', 'ARRIENDO', 'PRESTAMO')),
+      proveedor_rut TEXT,
+      proveedor_nombre TEXT NOT NULL,
+      descripcion TEXT NOT NULL,
+      monto_total REAL,
+      monto_mensual REAL NOT NULL,
+      numero_cuotas INTEGER,
+      tasa_interes REAL,
+      fecha_inicio DATE NOT NULL,
+      fecha_termino DATE,
+      dia_pago INTEGER NOT NULL,
+      saldo_pendiente REAL,
+      estado TEXT NOT NULL DEFAULT 'activo' CHECK(estado IN ('activo', 'finalizado', 'cancelado')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Tabla de cuentas por cobrar
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cuentas_por_cobrar (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cliente_rut TEXT NOT NULL,
+      cliente_nombre TEXT NOT NULL,
+      documento_id INTEGER,
+      numero_documento TEXT NOT NULL,
+      tipo_documento INTEGER NOT NULL,
+      fecha_emision DATE NOT NULL,
+      fecha_vencimiento DATE NOT NULL,
+      monto_total REAL NOT NULL,
+      saldo_pendiente REAL NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'pagado_parcial', 'pagado', 'vencido')),
+      observaciones TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (documento_id) REFERENCES documentos(id)
+    );
+  `);
+
+  // Tabla de cuentas por pagar
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cuentas_por_pagar (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      proveedor_rut TEXT NOT NULL,
+      proveedor_nombre TEXT NOT NULL,
+      compra_id INTEGER,
+      numero_documento TEXT NOT NULL,
+      tipo_documento INTEGER NOT NULL,
+      fecha_emision DATE NOT NULL,
+      fecha_vencimiento DATE NOT NULL,
+      monto_total REAL NOT NULL,
+      saldo_pendiente REAL NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'pagado_parcial', 'pagado', 'vencido')),
+      observaciones TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (compra_id) REFERENCES compras(id)
+    );
+  `);
+
+  // Tabla de cuentas bancarias
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cuentas_bancarias (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      banco TEXT NOT NULL,
+      tipo_cuenta TEXT NOT NULL CHECK(tipo_cuenta IN ('corriente', 'ahorro', 'vista')),
+      numero_cuenta TEXT NOT NULL,
+      saldo_actual REAL NOT NULL DEFAULT 0,
+      moneda TEXT NOT NULL DEFAULT 'CLP',
+      activa INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(banco, numero_cuenta)
+    );
+  `);
+
+  // Tabla de movimientos bancarios
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS movimientos_bancarios (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cuenta_id INTEGER NOT NULL,
+      fecha DATE NOT NULL,
+      tipo TEXT NOT NULL CHECK(tipo IN ('deposito', 'retiro', 'transferencia', 'comision', 'interes')),
+      monto REAL NOT NULL,
+      descripcion TEXT NOT NULL,
+      numero_documento TEXT,
+      saldo_despues REAL NOT NULL,
+      conciliado INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (cuenta_id) REFERENCES cuentas_bancarias(id) ON DELETE CASCADE
+    );
+  `);
+
   // Índices para mejorar rendimiento
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_documentos_tipo_folio ON documentos(tipo_documento, folio);
