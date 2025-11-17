@@ -2,6 +2,18 @@
 
 Sistema completo de gestión financiera y tributaria que cumple con todas las normativas del SII de Chile. Permite gestionar compras, ventas, gastos, emitir documentos tributarios electrónicos (DTEs) y conectarse directamente con el SII.
 
+## ⚠️ ADVERTENCIA LEGAL IMPORTANTE
+
+**Esta aplicación es una herramienta de apoyo para la gestión tributaria.**
+
+- ✅ Cumple con normativas vigentes del SII de Chile
+- ⚠️ La responsabilidad tributaria es del contribuyente
+- 📋 Se recomienda contar con asesoría de un contador profesional
+- 🔐 NUNCA compartir certificado digital ni credenciales
+- ✅ Siempre probar en ambiente de certificación primero
+
+**Ver documento completo:** [CUMPLIMIENTO_NORMATIVO.md](./CUMPLIMIENTO_NORMATIVO.md)
+
 ## ✨ Características Principales
 
 ### 📄 Documentos Tributarios Electrónicos (DTE)
@@ -19,12 +31,21 @@ Sistema completo de gestión financiera y tributaria que cumple con todas las no
 - 📉 Reportes de IVA (débito y crédito fiscal)
 - 💳 Control de pagos y cobros
 
+### 📚 Libros Contables Electrónicos (OBLIGATORIO por ley)
+- ✅ **Libro de Compras y Ventas** - Envío mensual (antes del día 10)
+- ✅ **IECV** (Información Electrónica Compras y Ventas)
+- ✅ **Resumen automático para F29**
+- ✅ Generación de XML según formato SII
+- ✅ Firma digital automática
+- ⚠️ Libro Diario y Mayor (estructura básica - requiere contabilidad completa)
+
 ### 🔔 Recordatorios Tributarios Inteligentes
-- ⏰ Formulario F29 (Declaración mensual IVA) - Día 12 de cada mes
-- 📅 Operación Renta F22 (Anual) - Abril
-- 📋 Declaraciones Juradas - Febrero/Marzo
-- 🏢 Patente Comercial - Enero y Julio
-- ⚡ Notificaciones de 30, 15, 7 y 3 días antes del vencimiento
+- ⏰ **F29** (Declaración mensual IVA) - Día 12 de cada mes
+- 📚 **Libros Electrónicos** - Día 10 de cada mes (NUEVO)
+- 📅 **F22** (Operación Renta) - Abril
+- 📋 **Declaraciones Juradas** - Febrero/Marzo (DJ 1812, 1834, 1887, 1879, 1926, 1948, 1947)
+- 🏢 **Patente Comercial** - Enero y Julio
+- ⚡ Notificaciones automáticas: 60, 30, 15, 7, 3 y 1 días antes del vencimiento
 
 ### 🔐 Integración Directa con SII
 - 🔑 Autenticación con certificado digital

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { DTEController } from '../controllers/dte.controller';
 import { ReminderController } from '../controllers/reminder.controller';
 import { ComprasController } from '../controllers/compras.controller';
+import { LibrosController } from '../controllers/libros.controller';
 
 const router = Router();
 
@@ -38,5 +39,13 @@ router.post('/recordatorios/process', ReminderController.processReminders);
 router.get('/notificaciones', ReminderController.getUnreadNotifications);
 router.put('/notificaciones/:id/read', ReminderController.markAsRead);
 router.put('/notificaciones/read-all', ReminderController.markAllAsRead);
+
+// ==================== RUTAS LIBROS CONTABLES (OBLIGATORIO SII) ====================
+router.get('/libros', LibrosController.listarLibros);
+router.get('/libros/pendientes', LibrosController.obtenerPeriodosPendientes);
+router.get('/libros/:periodo/:tipo/descargar', LibrosController.descargarLibro);
+router.post('/libros/:periodo/compra-venta', LibrosController.generarLibroComprasVentas);
+router.post('/libros/:periodo/iecv', LibrosController.generarIECV);
+router.get('/libros/:periodo/resumen-f29', LibrosController.obtenerResumenF29);
 
 export default router;

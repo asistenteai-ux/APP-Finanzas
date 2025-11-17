@@ -157,6 +157,78 @@ export function initializeDatabase() {
     );
   `);
 
+  // Tabla de libros electrónicos (OBLIGATORIO por ley)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS libros_electronicos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      periodo TEXT NOT NULL,
+      tipo_libro TEXT NOT NULL CHECK(tipo_libro IN ('COMPRA_VENTA', 'IECV', 'DIARIO', 'MAYOR', 'BALANCE')),
+      xml_content TEXT NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'generado' CHECK(estado IN ('generado', 'enviado', 'aceptado', 'rechazado')),
+      track_id TEXT,
+      fecha_generacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+      fecha_envio DATETIME,
+      observaciones TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(periodo, tipo_libro)
+    );
+  `);
+
+  // Tabla de retenciones de honorarios
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS retenciones (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tipo_retencion TEXT NOT NULL CHECK(tipo_retencion IN ('honorarios', 'trabajadores')),
+      folio INTEGER NOT NULL,
+      fecha_documento DATE NOT NULL,
+      rut_retenido TEXT NOT NULL,
+      razon_social_retenido TEXT NOT NULL,
+      monto_bruto REAL NOT NULL,
+      tasa_retencion REAL NOT NULL DEFAULT 10,
+      monto_retenido REAL NOT NULL,
+      monto_liquido REAL NOT NULL,
+      periodo_tributario TEXT NOT NULL,
+      declarado INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Tabla de declaraciones juradas
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS declaraciones_juradas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      codigo_formulario TEXT NOT NULL,
+      nombre TEXT NOT NULL,
+      periodo TEXT NOT NULL,
+      fecha_vencimiento DATE NOT NULL,
+      estado TEXT NOT NULL DEFAULT 'pendiente' CHECK(estado IN ('pendiente', 'presentada', 'rechazada')),
+      folio_declaracion TEXT,
+      fecha_presentacion DATETIME,
+      xml_content TEXT,
+      observaciones TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(codigo_formulario, periodo)
+    );
+  `);
+
+  // Tabla de movimientos contables (para libro diario)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS movimientos_contables (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fecha DATE NOT NULL,
+      numero_asiento INTEGER NOT NULL,
+      glosa TEXT NOT NULL,
+      cuenta_contable TEXT NOT NULL,
+      debe REAL DEFAULT 0,
+      haber REAL DEFAULT 0,
+      documento_referencia TEXT,
+      centro_costo TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Índices para mejorar rendimiento
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_documentos_tipo_folio ON documentos(tipo_documento, folio);
@@ -165,12 +237,19 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_compras_fecha ON compras(fecha_documento);
     CREATE INDEX IF NOT EXISTS idx_compras_proveedor ON compras(rut_proveedor);
     CREATE INDEX IF NOT EXISTS idx_notificaciones_leida ON notificaciones(leida);
+    CREATE INDEX IF NOT EXISTS idx_libros_periodo ON libros_electronicos(periodo, tipo_libro);
+    CREATE INDEX IF NOT EXISTS idx_retenciones_periodo ON retenciones(periodo_tributario);
+    CREATE INDEX IF NOT EXISTS idx_dj_periodo ON declaraciones_juradas(periodo);
   `);
 
   // Insertar recordatorios por defecto
   insertDefaultReminders(db);
 
+  // Insertar declaraciones juradas obligatorias
+  insertDefaultDeclaracionesJuradas(db);
+
   console.log('✅ Base de datos inicializada correctamente');
+  console.log('📚 Tablas creadas: documentos, compras, libros_electronicos, retenciones, declaraciones_juradas');
 
   return db;
 }
@@ -244,6 +323,90 @@ function insertDefaultReminders(db: Database.Database) {
     );
 
     console.log('✅ Recordatorios por defecto insertados');
+  }
+}
+
+function insertDefaultDeclaracionesJuradas(db: Database.Database) {
+  const checkDJ = db.prepare('SELECT COUNT(*) as count FROM declaraciones_juradas').get() as { count: number };
+
+  if (checkDJ.count === 0) {
+    const insert = db.prepare(`
+      INSERT INTO declaraciones_juradas (codigo_formulario, nombre, periodo, fecha_vencimiento, estado)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+
+    // DJ más comunes que deben presentar las empresas
+    const declaraciones = [
+      {
+        codigo: '1812',
+        nombre: 'Relación de Enajenación de Activos',
+        vencimiento: `${nextYear}-03-14`,
+      },
+      {
+        codigo: '1834',
+        nombre: 'Relación de Créditos por Impuestos Externos',
+        vencimiento: `${nextYear}-03-27`,
+      },
+      {
+        codigo: '1887',
+        nombre: 'Relación de Retenciones de Trabajadores Independientes',
+        vencimiento: `${nextYear}-03-15`,
+      },
+      {
+        codigo: '1879',
+        nombre: 'Relación de Rentas y Retenciones de Trabajadores Dependientes',
+        vencimiento: `${nextYear}-03-10`,
+      },
+      {
+        codigo: '1926',
+        nombre: 'Registro de Rentas Empresariales (Régimen Semi Integrado)',
+        vencimiento: `${nextYear}-06-30`,
+      },
+      {
+        codigo: '1948',
+        nombre: 'Declaración Jurada Régimen ProPyme',
+        vencimiento: `${nextYear}-04-30`,
+      },
+      {
+        codigo: '1947',
+        nombre: 'Declaración Jurada Régimen Renta Presunta',
+        vencimiento: `${nextYear}-04-30`,
+      },
+    ];
+
+    declaraciones.forEach((dj) => {
+      insert.run(
+        dj.codigo,
+        dj.nombre,
+        nextYear.toString(),
+        dj.vencimiento,
+        'pendiente'
+      );
+    });
+
+    // Recordatorio mensual del día 10 para envío de libros contables
+    const envioLibros = db.prepare(`
+      INSERT INTO recordatorios (tipo, nombre, descripcion, fecha_vencimiento, periodicidad, dias_aviso)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    nextMonth.setDate(10);
+
+    envioLibros.run(
+      'LIBROS_ELECTRONICOS',
+      'Envío Libros Electrónicos al SII',
+      'Obligación mensual de enviar libros contables electrónicos antes del día 10',
+      nextMonth.toISOString().split('T')[0],
+      'mensual',
+      '7,3,1'
+    );
+
+    console.log('✅ Declaraciones Juradas y recordatorios legales insertados');
   }
 }
 
