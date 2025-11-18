@@ -100,85 +100,93 @@ Sistema completo de gestión financiera y tributaria que cumple con todas las no
 
 ## 🚀 Instalación y Configuración
 
-### ⚡ INSTALACIÓN RÁPIDA (Windows)
+### ⚡ INSTALACIÓN SUPER SIMPLE (5 pasos)
 
-**Para usuarios sin conocimientos técnicos:**
+**Solo copia y pega comandos. Sin archivos .bat ni .exe necesarios.**
 
-1. Instala **Node.js** desde: https://nodejs.org/ (versión LTS)
-2. Reinicia tu computadora
-3. Haz **doble clic** en: `INSTALAR.bat`
-4. Espera 3-5 minutos
-5. ¡Listo!
+#### Paso 1: Instalar Node.js
 
-**Para iniciar la app después:**
-- Haz doble clic en: `INICIAR_APP.bat`
+1. Ve a: **https://nodejs.org/**
+2. Descarga la versión **LTS 20.x**
+3. Instala (dale "Siguiente" a todo)
+4. **REINICIA tu PC**
 
-📖 **Guía completa:** [INSTALACION_RAPIDA.md](./INSTALACION_RAPIDA.md) o [GUIA_INSTALACION_WINDOWS.md](./GUIA_INSTALACION_WINDOWS.md)
+#### Paso 2: Abrir Terminal
+
+- Presiona `Windows + R`
+- Escribe: `cmd`
+- Presiona Enter
+
+#### Paso 3: Navegar a la Carpeta del Proyecto
+
+```cmd
+cd C:\ruta\donde\descargaste\APP-Finanzas\backend
+```
+
+**Truco:** Abre la carpeta `backend` en el explorador, haz clic en la barra de direcciones, copia la ruta, y úsala en el comando `cd`.
+
+#### Paso 4: Instalar Dependencias (Tarda 3-5 minutos)
+
+```cmd
+npm install
+```
+
+Espera a que termine.
+
+#### Paso 5: Iniciar la Aplicación
+
+```cmd
+npm run dev
+```
+
+**¡LISTO!** Abre tu navegador en: **http://localhost:3000**
+
+**Credenciales:**
+- Email: `admin@finanzas.cl`
+- Password: `admin123`
 
 ---
 
-### 🛠️ Instalación Manual
+### 📖 Guía Detallada
 
-#### Requisitos Previos
-- Node.js 18+ y npm
-- Certificado digital (.pfx o .p12) para firma electrónica (opcional)
-- RUT de empresa registrada en el SII (opcional)
+Si necesitas instrucciones más detalladas: **[INSTALACION_MANUAL.md](./INSTALACION_MANUAL.md)**
 
-#### Pasos de Instalación
+---
 
-1. **Clonar el repositorio**
-```bash
-git clone <repository-url>
-cd APP-Finanzas
-```
+### 🔄 Alternativa: PowerShell (Más Moderno)
 
-2. **Instalar dependencias del backend**
-```bash
-cd backend
-npm install
-```
+Si prefieres usar PowerShell:
 
-3. **Instalar dependencias del frontend** (opcional - si usarás el frontend)
-```bash
-cd ../frontend
-npm install
-```
+1. **Click derecho** en `instalar.ps1`
+2. Selecciona **"Ejecutar con PowerShell"**
+3. Sigue las instrucciones
 
-4. **Configurar variables de entorno**
+---
 
-Crear archivo `.env` en la carpeta `backend`:
-```env
-PORT=3001
-NODE_ENV=development
-DATABASE_PATH=./database.sqlite
+### 🛠️ Requisitos
 
-# SII Configuration
-SII_ENVIRONMENT=certificacion  # o "produccion"
-SII_RUT=12345678-9
-SII_COMPANY_NAME=Mi Empresa SpA
+- **Node.js 20.x LTS** (obligatorio)
+- Certificado digital SII (opcional - solo si usarás integración SII)
+- RUT de empresa (opcional)
 
-# Certificado Digital
-CERT_PATH=./certificates/certificado.pfx
-CERT_PASSWORD=tu_password_certificado
-```
+### ⏸️ Detener la Aplicación
 
-5. **Iniciar la aplicación**
+1. Ve a la terminal donde está corriendo
+2. Presiona `Ctrl + C`
+3. Escribe `S` y presiona Enter
 
-Backend:
-```bash
-cd backend
+---
+
+### 🔄 Iniciar Después
+
+Para usar la aplicación otra vez:
+
+```cmd
+cd C:\ruta\a\APP-Finanzas\backend
 npm run dev
 ```
 
-Frontend (en otra terminal):
-```bash
-cd frontend
-npm run dev
-```
-
-La aplicación estará disponible en:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
+---
 
 ## 📚 Documentación del SII
 
