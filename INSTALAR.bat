@@ -1,28 +1,26 @@
 @echo off
-chcp 65001 >nul
-color 0A
 title Instalador APP Finanzas - Sistema Contable SII Chile
 
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
-echo ║                                                              ║
-echo ║         INSTALADOR APP FINANZAS - SISTEMA CONTABLE          ║
-echo ║              Sistema de Gestión Financiera SII Chile        ║
-echo ║                                                              ║
-echo ╚══════════════════════════════════════════════════════════════╝
+echo ============================================================
+echo.
+echo         INSTALADOR APP FINANZAS - SISTEMA CONTABLE
+echo         Sistema de Gestion Financiera SII Chile
+echo.
+echo ============================================================
 echo.
 echo.
 
-:: Verificar si Node.js está instalado
+:: Verificar si Node.js esta instalado
 echo [1/6] Verificando Node.js...
 where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo.
-    echo ❌ ERROR: Node.js no está instalado
+    echo ERROR: Node.js no esta instalado
     echo.
     echo Por favor, instala Node.js primero:
     echo 1. Ve a: https://nodejs.org/
-    echo 2. Descarga la versión LTS (recomendada)
+    echo 2. Descarga la version LTS (recomendada)
     echo 3. Instala Node.js
     echo 4. Vuelve a ejecutar este instalador
     echo.
@@ -31,31 +29,31 @@ if %errorlevel% neq 0 (
 )
 
 node --version
-echo ✅ Node.js instalado correctamente
+echo OK - Node.js instalado correctamente
 echo.
 
-:: Verificar si npm está instalado
+:: Verificar si npm esta instalado
 echo [2/6] Verificando npm...
 where npm >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ❌ ERROR: npm no está instalado
+    echo ERROR: npm no esta instalado
     pause
     exit /b 1
 )
 
 npm --version
-echo ✅ npm instalado correctamente
+echo OK - npm instalado correctamente
 echo.
 
 :: Ir a la carpeta backend
 echo [3/6] Navegando a la carpeta backend...
 cd /d "%~dp0backend"
 if %errorlevel% neq 0 (
-    echo ❌ ERROR: No se encontró la carpeta backend
+    echo ERROR: No se encontro la carpeta backend
     pause
     exit /b 1
 )
-echo ✅ Carpeta backend encontrada
+echo OK - Carpeta backend encontrada
 echo.
 
 :: Instalar dependencias del backend
@@ -65,7 +63,7 @@ echo.
 call npm install
 if %errorlevel% neq 0 (
     echo.
-    echo ❌ ERROR: No se pudieron instalar las dependencias
+    echo ERROR: No se pudieron instalar las dependencias
     echo.
     echo Intenta ejecutar manualmente:
     echo   cd backend
@@ -75,37 +73,26 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 echo.
-echo ✅ Dependencias del backend instaladas correctamente
+echo OK - Dependencias del backend instaladas correctamente
 echo.
 
 :: Crear archivo .env si no existe
 echo [5/6] Configurando variables de entorno...
 if not exist .env (
     echo Creando archivo .env...
-    (
-        echo # Configuración de la aplicación
-        echo NODE_ENV=development
-        echo PORT=3000
-        echo.
-        echo # Base de datos
-        echo DATABASE_PATH=./database.sqlite
-        echo.
-        echo # JWT Secret ^(cambia esto en producción^)
-        echo JWT_SECRET=mi_secreto_super_seguro_2025_app_finanzas_chile
-        echo.
-        echo # SII Chile Configuration
-        echo SII_ENVIRONMENT=certificacion
-        echo SII_RUT=
-        echo SII_COMPANY_NAME=
-        echo SII_CERT_PATH=
-        echo SII_CERT_PASSWORD=
-        echo.
-        echo # CORS
-        echo CORS_ORIGIN=http://localhost:5173
-    ) > .env
-    echo ✅ Archivo .env creado
+    echo NODE_ENV=development > .env
+    echo PORT=3000 >> .env
+    echo DATABASE_PATH=./database.sqlite >> .env
+    echo JWT_SECRET=mi_secreto_super_seguro_2025_app_finanzas_chile >> .env
+    echo SII_ENVIRONMENT=certificacion >> .env
+    echo SII_RUT= >> .env
+    echo SII_COMPANY_NAME= >> .env
+    echo SII_CERT_PATH= >> .env
+    echo SII_CERT_PASSWORD= >> .env
+    echo CORS_ORIGIN=http://localhost:5173 >> .env
+    echo OK - Archivo .env creado
 ) else (
-    echo ✅ Archivo .env ya existe
+    echo OK - Archivo .env ya existe
 )
 echo.
 
@@ -114,8 +101,8 @@ echo [6/6] Compilando TypeScript...
 call npm run build
 if %errorlevel% neq 0 (
     echo.
-    echo ⚠️ ADVERTENCIA: No se pudo compilar TypeScript
-    echo Esto es normal si es la primera instalación
+    echo ADVERTENCIA: No se pudo compilar TypeScript
+    echo Esto es normal si es la primera instalacion
     echo Puedes ejecutar la app con: npm run dev
     echo.
 )
@@ -123,42 +110,44 @@ echo.
 
 :: Crear carpeta para uploads
 if not exist uploads mkdir uploads
-echo ✅ Carpeta uploads creada
+echo OK - Carpeta uploads creada
 
 echo.
-echo ╔══════════════════════════════════════════════════════════════╗
-echo ║                                                              ║
-echo ║           ✅ INSTALACIÓN COMPLETADA EXITOSAMENTE             ║
-echo ║                                                              ║
-echo ╚══════════════════════════════════════════════════════════════╝
+echo ============================================================
 echo.
-echo 📝 PRÓXIMOS PASOS:
+echo         INSTALACION COMPLETADA EXITOSAMENTE
 echo.
-echo 1. Abre una terminal en la carpeta "backend"
-echo 2. Ejecuta: npm run dev
-echo 3. La aplicación estará disponible en: http://localhost:3000
+echo ============================================================
 echo.
-echo 🔐 Usuario admin por defecto:
+echo PROXIMOS PASOS:
+echo.
+echo 1. Ejecuta: INICIAR_APP.bat
+echo 2. O manualmente: cd backend y luego npm run dev
+echo 3. La aplicacion estara en: http://localhost:3000
+echo.
+echo Usuario admin por defecto:
 echo    Email: admin@finanzas.cl
 echo    Password: admin123
 echo.
-echo 📖 Lee el archivo GUIA_INSTALACION_WINDOWS.md para más detalles
+echo Lee el archivo GUIA_INSTALACION_WINDOWS.md para mas detalles
 echo.
-echo ¿Quieres iniciar la aplicación ahora? (S/N)
-set /p iniciar="Respuesta: "
+echo ============================================================
+echo.
+
+set /p iniciar="Quieres iniciar la aplicacion ahora? (S/N): "
 
 if /i "%iniciar%"=="S" (
     echo.
-    echo 🚀 Iniciando aplicación...
+    echo Iniciando aplicacion...
     echo.
-    echo ⚠️ IMPORTANTE: Deja esta ventana abierta mientras usas la app
-    echo    Para detener el servidor, presiona Ctrl+C
+    echo IMPORTANTE: Deja esta ventana abierta mientras usas la app
+    echo Para detener el servidor, presiona Ctrl+C
     echo.
     timeout /t 3 >nul
     call npm run dev
 ) else (
     echo.
-    echo Para iniciar la aplicación más tarde:
+    echo Para iniciar la aplicacion mas tarde:
     echo 1. Abre una terminal
     echo 2. cd backend
     echo 3. npm run dev
