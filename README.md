@@ -31,6 +31,28 @@ Sistema completo de gestión financiera y tributaria que cumple con todas las no
 - 📉 Reportes de IVA (débito y crédito fiscal)
 - 💳 Control de pagos y cobros
 
+### 👥 Sistema Multiusuario con Roles (NUEVO)
+- 🔐 **Autenticación JWT** con contraseñas encriptadas
+- 👤 **3 Roles de Usuario:**
+  - **Admin** (Contador): Control total del sistema
+  - **Usuario** (Empleado): Solo puede registrar datos
+  - **Visor** (Inversionista): Solo lectura
+- 🔒 **Permisos granulares** por rol
+- 👨‍💼 Usuario administrador por defecto creado automáticamente
+- 📱 Múltiples usuarios trabajando simultáneamente
+
+### 📸 OCR Automático de Facturas (NUEVO)
+- 🤖 **Extracción automática de datos** de facturas escaneadas
+- 📷 Soporta **imágenes** (JPG, PNG) y **PDFs**
+- 🎯 Detecta automáticamente:
+  - RUT del proveedor
+  - Número de folio
+  - Fecha del documento
+  - Montos (neto, IVA, total)
+  - Razón social
+- ✨ **Súper fácil:** Solo sube la foto, el sistema hace el resto
+- ⚡ Ahorra tiempo y evita errores de digitación
+
 ### 📚 Libros Contables Electrónicos (OBLIGATORIO por ley)
 - ✅ **Libro de Compras y Ventas** - Envío mensual (antes del día 10)
 - ✅ **IECV** (Información Electrónica Compras y Ventas)
@@ -62,6 +84,11 @@ Sistema completo de gestión financiera y tributaria que cumple con todas las no
 - **xml2js** para generación de XML
 - **node-forge** para firma digital
 - **soap** para servicios web del SII
+- **bcryptjs** para encriptación de contraseñas
+- **jsonwebtoken** para autenticación JWT
+- **multer** para subida de archivos
+- **tesseract.js** para OCR de imágenes
+- **pdf.js-extract** para extracción de texto de PDFs
 
 ### Frontend
 - **React 18** + **TypeScript**
@@ -73,12 +100,31 @@ Sistema completo de gestión financiera y tributaria que cumple con todas las no
 
 ## 🚀 Instalación y Configuración
 
-### Requisitos Previos
-- Node.js 18+ y npm
-- Certificado digital (.pfx o .p12) para firma electrónica
-- RUT de empresa registrada en el SII
+### ⚡ INSTALACIÓN RÁPIDA (Windows)
 
-### Instalación
+**Para usuarios sin conocimientos técnicos:**
+
+1. Instala **Node.js** desde: https://nodejs.org/ (versión LTS)
+2. Reinicia tu computadora
+3. Haz **doble clic** en: `INSTALAR.bat`
+4. Espera 3-5 minutos
+5. ¡Listo!
+
+**Para iniciar la app después:**
+- Haz doble clic en: `INICIAR_APP.bat`
+
+📖 **Guía completa:** [INSTALACION_RAPIDA.md](./INSTALACION_RAPIDA.md) o [GUIA_INSTALACION_WINDOWS.md](./GUIA_INSTALACION_WINDOWS.md)
+
+---
+
+### 🛠️ Instalación Manual
+
+#### Requisitos Previos
+- Node.js 18+ y npm
+- Certificado digital (.pfx o .p12) para firma electrónica (opcional)
+- RUT de empresa registrada en el SII (opcional)
+
+#### Pasos de Instalación
 
 1. **Clonar el repositorio**
 ```bash
@@ -92,7 +138,7 @@ cd backend
 npm install
 ```
 
-3. **Instalar dependencias del frontend**
+3. **Instalar dependencias del frontend** (opcional - si usarás el frontend)
 ```bash
 cd ../frontend
 npm install
