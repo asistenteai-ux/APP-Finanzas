@@ -1,0 +1,21 @@
+{
+  "name": "app-finanzas",
+  "version": "1.0.0",
+  "description": "Sistema de Gestión Financiera SII Chile - Ejecutable Windows",
+  "main": "dist/server.js",
+  "targets": [
+    "node18-win-x64"
+  ],
+  "outputPath": "../",
+  "assets": [
+    "node_modules/better-sqlite3/build/Release/**/*",
+    "node_modules/better-sqlite3/lib/**/*",
+    "node_modules/tesseract.js/dist/**/*",
+    "node_modules/tesseract.js-core/**/*",
+    "dist/**/*",
+    "../.env"
+  ],
+  "scripts": [
+    "dist/**/*.js"
+  ]
+}
