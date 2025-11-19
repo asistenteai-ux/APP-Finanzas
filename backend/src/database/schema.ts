@@ -399,6 +399,34 @@ export function initializeDatabase() {
     );
   `);
 
+  // Tabla de configuración de la empresa (tu empresa que usa el sistema)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS configuracion_empresa (
+      id INTEGER PRIMARY KEY CHECK(id = 1),
+      rut TEXT NOT NULL,
+      razon_social TEXT NOT NULL,
+      nombre_fantasia TEXT,
+      giro TEXT NOT NULL,
+      direccion TEXT NOT NULL,
+      comuna TEXT NOT NULL,
+      ciudad TEXT NOT NULL,
+      region TEXT NOT NULL,
+      telefono TEXT,
+      email TEXT,
+      sitio_web TEXT,
+      logo_path TEXT,
+      actividad_economica TEXT,
+      representante_legal TEXT,
+      representante_rut TEXT,
+      codigo_sii TEXT,
+      resolucion_sii TEXT,
+      certificado_digital_path TEXT,
+      ambiente_sii TEXT DEFAULT 'certificacion' CHECK(ambiente_sii IN ('certificacion', 'produccion')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Índices para mejorar rendimiento
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_documentos_tipo_folio ON documentos(tipo_documento, folio);

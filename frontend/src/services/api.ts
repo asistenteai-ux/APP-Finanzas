@@ -99,4 +99,34 @@ export const notificacionesApi = {
   markAllAsRead: () => api.put('/notificaciones/read-all'),
 };
 
+// ==================== CONFIGURACIÓN EMPRESA ====================
+export interface EmpresaConfigData {
+  rut: string;
+  razon_social: string;
+  nombre_fantasia?: string;
+  giro: string;
+  direccion: string;
+  comuna: string;
+  ciudad: string;
+  region: string;
+  telefono?: string;
+  email?: string;
+  sitio_web?: string;
+  actividad_economica?: string;
+  representante_legal?: string;
+  representante_rut?: string;
+  codigo_sii?: string;
+  resolucion_sii?: string;
+  ambiente_sii?: 'certificacion' | 'produccion';
+}
+
+export const empresaApi = {
+  getConfig: () => api.get('/empresa'),
+  updateConfig: (data: FormData) => api.put('/empresa', data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+};
+
 export default api;

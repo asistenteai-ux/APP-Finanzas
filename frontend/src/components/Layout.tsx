@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Home,
@@ -11,13 +11,20 @@ import {
   Menu,
   X,
   ChevronRight,
+  LogOut,
+  Settings,
+  Building2,
 } from 'lucide-react';
 import { notificacionesApi } from '../services/api';
 import NotificationBell from './NotificationBell';
+import { useAuth } from '../contexts/AuthContext';
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const { data: notificaciones } = useQuery({
     queryKey: ['notificaciones'],
@@ -32,7 +39,22 @@ const Layout = () => {
     { path: '/notas-credito', icon: FileX, label: 'Notas de Crédito' },
     { path: '/compras', icon: ShoppingCart, label: 'Compras y Gastos' },
     { path: '/recordatorios', icon: Bell, label: 'Recordatorios Tributarios' },
+    { path: '/configuracion', icon: Building2, label: 'Configuración Empresa' },
   ];
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const getRoleName = (rol: string) => {
+    const roles: { [key: string]: string } = {
+      admin: 'Administrador',
+      usuario: 'Usuario',
+      visor: 'Visor',
+    };
+    return roles[rol] || rol;
+  };
 
   const isActive = (path: string, exact = false) => {
     if (exact) return location.pathname === path;
@@ -130,14 +152,47 @@ const Layout = () => {
               />
 
               {/* Usuario */}
-              <div className="flex items-center gap-3 px-4 py-2 bg-gray-100 rounded-lg">
-                <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">U</span>
-                </div>
-                <div className="text-sm">
-                  <p className="font-semibold text-gray-800">Usuario</p>
-                  <p className="text-gray-500 text-xs">Administrador</p>
-                </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-3 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">
+                      {user?.nombre?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-left">
+                    <p className="font-semibold text-gray-800">{user?.nombre || 'Usuario'}</p>
+                    <p className="text-gray-500 text-xs">{getRoleName(user?.rol || '')}</p>
+                  </div>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                    <div className="px-4 py-2 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        navigate('/configuracion');
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                    >
+                      <Settings size={16} />
+                      Configuración
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    >
+                      <LogOut size={16} />
+                      Cerrar Sesión
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>

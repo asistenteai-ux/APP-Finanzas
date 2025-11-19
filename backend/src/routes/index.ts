@@ -3,6 +3,7 @@ import { DTEController } from '../controllers/dte.controller';
 import { ReminderController } from '../controllers/reminder.controller';
 import { ComprasController } from '../controllers/compras.controller';
 import { LibrosController } from '../controllers/libros.controller';
+import { EmpresaController } from '../controllers/empresa.controller';
 import { authController } from '../controllers/auth.controller';
 import { uploadController } from '../controllers/upload.controller';
 import { requireAuth, requireRole } from '../middleware/auth.middleware';
@@ -109,5 +110,18 @@ router.get('/libros/:periodo/resumen-f29', requireAuth, LibrosController.obtener
 // Generación de libros (solo admin - tareas contables críticas)
 router.post('/libros/:periodo/compra-venta', requireAuth, requireRole('admin'), LibrosController.generarLibroComprasVentas);
 router.post('/libros/:periodo/iecv', requireAuth, requireRole('admin'), LibrosController.generarIECV);
+
+// ==================== RUTAS CONFIGURACIÓN EMPRESA ====================
+// Obtener configuración (todos los usuarios autenticados)
+router.get('/empresa', requireAuth, (req, res) => EmpresaController.getConfiguracion(req, res));
+
+// Actualizar configuración (solo admin)
+router.put(
+  '/empresa',
+  requireAuth,
+  requireRole('admin'),
+  EmpresaController.getUploadMiddleware(),
+  (req, res) => EmpresaController.updateConfiguracion(req, res)
+);
 
 export default router;
