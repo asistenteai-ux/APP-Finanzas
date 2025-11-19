@@ -66,9 +66,13 @@ router.get('/dte/folio/:tipoDocumento', requireAuth, DTEController.getNextFolio)
 
 // Creación y edición (admin y usuario)
 router.post('/dte', requireAuth, requireRole('admin', 'usuario'), DTEController.createDTE);
+router.post('/dte/preview', requireAuth, requireRole('admin', 'usuario'), DTEController.previewDTE);
 
 // Envío al SII (solo admin)
 router.post('/dte/:id/send', requireAuth, requireRole('admin'), DTEController.sendDTE);
+
+// Anulación (solo admin)
+router.post('/dte/:id/anular', requireAuth, requireRole('admin'), DTEController.anularDTE);
 
 // ==================== RUTAS COMPRAS ====================
 // Consultas (todos los usuarios autenticados)

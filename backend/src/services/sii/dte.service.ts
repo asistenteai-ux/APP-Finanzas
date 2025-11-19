@@ -3,6 +3,7 @@ import forge from 'node-forge';
 import fs from 'fs';
 import { config } from '../../config';
 import { SIIAuthService } from './auth.service';
+import { getDatabase } from '../../database/schema';
 import axios from 'axios';
 
 export interface DTEData {
@@ -58,10 +59,39 @@ export class DTEService {
   }
 
   /**
+   * Obtiene los datos de la empresa desde la base de datos
+   */
+  private getEmpresaData(): any {
+    const db = getDatabase();
+    const empresa = db.prepare('SELECT * FROM configuracion_empresa WHERE id = 1').get();
+
+    if (!empresa) {
+      // Fallback a configuración por variables de entorno
+      return {
+        rut: config.sii.rut,
+        razon_social: config.sii.companyName,
+        giro: config.sii.companyActivity,
+        direccion: config.sii.companyAddress,
+        comuna: 'Santiago',
+        ciudad: 'Santiago',
+        codigo_sii: '',
+        resolucion_sii: '',
+        actividad_economica: '620200',
+        ambiente_sii: config.sii.environment,
+      };
+    }
+
+    return empresa;
+  }
+
+  /**
    * Genera el XML del DTE según formato SII
    */
   generateDTEXML(dteData: DTEData): string {
     const { tipoDocumento, folio, fechaEmision, receptor, detalles, referencias } = dteData;
+
+    // Obtener datos de la empresa
+    const empresa: any = this.getEmpresaData();
 
     // Calcular totales
     let montoNeto = 0;
@@ -101,13 +131,13 @@ export class DTEService {
               FchVenc: fechaEmision,
             },
             Emisor: {
-              RUTEmisor: config.sii.rut,
-              RznSoc: config.sii.companyName,
-              GiroEmis: config.sii.companyActivity,
-              Acteco: '620200', // Código de actividad económica (ejemplo)
-              DirOrigen: config.sii.companyAddress,
-              CmnaOrigen: 'Santiago',
-              CiudadOrigen: 'Santiago',
+              RUTEmisor: empresa.rut,
+              RznSoc: empresa.razon_social,
+              GiroEmis: empresa.giro,
+              Acteco: empresa.actividad_economica || '620200',
+              DirOrigen: empresa.direccion,
+              CmnaOrigen: empresa.comuna,
+              CiudadOrigen: empresa.ciudad,
             },
             Receptor: {
               RUTRecep: receptor.rut,
