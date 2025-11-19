@@ -4,6 +4,7 @@ import { ReminderController } from '../controllers/reminder.controller';
 import { ComprasController } from '../controllers/compras.controller';
 import { LibrosController } from '../controllers/libros.controller';
 import { EmpresaController } from '../controllers/empresa.controller';
+import { SIIDiagnosticoController } from '../controllers/sii-diagnostico.controller';
 import { authController } from '../controllers/auth.controller';
 import { uploadController } from '../controllers/upload.controller';
 import { requireAuth, requireRole } from '../middleware/auth.middleware';
@@ -127,5 +128,14 @@ router.put(
   EmpresaController.getUploadMiddleware(),
   (req, res) => EmpresaController.updateConfiguracion(req, res)
 );
+
+// ==================== RUTAS DIAGNÓSTICO SII ====================
+// Prueba completa de conexión (solo admin)
+router.get('/sii/diagnostico', requireAuth, requireRole('admin'), (req, res) => SIIDiagnosticoController.testConexion(req, res));
+
+// Pruebas individuales (solo admin)
+router.get('/sii/test/semilla', requireAuth, requireRole('admin'), (req, res) => SIIDiagnosticoController.getSemilla(req, res));
+router.get('/sii/test/token', requireAuth, requireRole('admin'), (req, res) => SIIDiagnosticoController.getToken(req, res));
+router.get('/sii/test/certificado', requireAuth, requireRole('admin'), (req, res) => SIIDiagnosticoController.getCertificadoInfo(req, res));
 
 export default router;
