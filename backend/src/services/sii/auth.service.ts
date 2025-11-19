@@ -36,32 +36,47 @@ export class SIIAuthService {
   async getSeed(): Promise<string> {
     try {
       const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:def="http://DefaultNamespace">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
   <soapenv:Header/>
   <soapenv:Body>
-    <def:getSeed/>
+    <getSeed xmlns="http://DefaultNamespace"/>
   </soapenv:Body>
 </soapenv:Envelope>`;
 
       const response = await axios.post(this.baseUrls.seed, soapEnvelope, {
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',
-          'SOAPAction': '',
+          'SOAPAction': 'getSeed',
         },
+        timeout: 30000, // 30 segundos timeout
       });
 
       const parsed = this.xmlParser.parse(response.data);
-      const seed = parsed['SII:RESPUESTA']?.['SII:RESP_BODY']?.SEMILLA;
+
+      // El SII puede responder en diferentes formatos, intentar múltiples rutas
+      let seed = parsed['soap:Envelope']?.['soap:Body']?.['SII:RESPUESTA']?.['SII:RESP_BODY']?.['SEMILLA']
+                 || parsed['soapenv:Envelope']?.['soapenv:Body']?.['SII:RESPUESTA']?.['SII:RESP_BODY']?.['SEMILLA']
+                 || parsed['SII:RESPUESTA']?.['SII:RESP_BODY']?.['SEMILLA'];
 
       if (!seed) {
-        throw new Error('No se pudo obtener la semilla del SII');
+        console.error('Respuesta del SII:', JSON.stringify(parsed, null, 2));
+        throw new Error('No se pudo obtener la semilla del SII - formato de respuesta inesperado');
       }
 
-      console.log('✅ Semilla obtenida del SII');
+      console.log('✅ Semilla obtenida del SII:', seed.substring(0, 20) + '...');
       return seed;
     } catch (error: any) {
-      console.error('❌ Error al obtener semilla:', error.message);
-      throw new Error(`Error al obtener semilla del SII: ${error.message}`);
+      console.error('❌ Error al obtener semilla del SII:', {
+        message: error.message,
+        response: error.response?.data,
+        url: this.baseUrls.seed,
+      });
+
+      if (error.response) {
+        throw new Error(`Error del SII al obtener semilla: ${error.response.status} - ${error.response.statusText}`);
+      }
+
+      throw new Error(`Error de conexión con SII: ${error.message}`);
     }
   }
 
@@ -152,34 +167,49 @@ export class SIIAuthService {
 
       // Paso 3: Enviar semilla firmada al SII
       const soapEnvelope = `<?xml version="1.0" encoding="UTF-8"?>
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:def="http://DefaultNamespace">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
   <soapenv:Header/>
   <soapenv:Body>
-    <def:getToken>
-      <def:pszXml><![CDATA[${signedSeed}]]></def:pszXml>
-    </def:getToken>
+    <getToken xmlns="http://DefaultNamespace">
+      <pszXml><![CDATA[${signedSeed}]]></pszXml>
+    </getToken>
   </soapenv:Body>
 </soapenv:Envelope>`;
 
       const response = await axios.post(this.baseUrls.token, soapEnvelope, {
         headers: {
           'Content-Type': 'text/xml; charset=utf-8',
-          'SOAPAction': '',
+          'SOAPAction': 'getToken',
         },
+        timeout: 30000,
       });
 
       const parsed = this.xmlParser.parse(response.data);
-      const token = parsed['SII:RESPUESTA']?.['SII:RESP_BODY']?.TOKEN;
+
+      // El SII puede responder en diferentes formatos
+      let token = parsed['soap:Envelope']?.['soap:Body']?.['SII:RESPUESTA']?.['SII:RESP_BODY']?.['TOKEN']
+                  || parsed['soapenv:Envelope']?.['soapenv:Body']?.['SII:RESPUESTA']?.['SII:RESP_BODY']?.['TOKEN']
+                  || parsed['SII:RESPUESTA']?.['SII:RESP_BODY']?.['TOKEN'];
 
       if (!token) {
-        throw new Error('No se pudo obtener el token del SII');
+        console.error('Respuesta del SII:', JSON.stringify(parsed, null, 2));
+        throw new Error('No se pudo obtener el token del SII - formato de respuesta inesperado');
       }
 
-      console.log('✅ Token obtenido del SII');
+      console.log('✅ Token obtenido del SII:', token.substring(0, 30) + '...');
       return token;
     } catch (error: any) {
-      console.error('❌ Error al obtener token:', error.message);
-      throw new Error(`Error al obtener token del SII: ${error.message}`);
+      console.error('❌ Error al obtener token del SII:', {
+        message: error.message,
+        response: error.response?.data,
+        url: this.baseUrls.token,
+      });
+
+      if (error.response) {
+        throw new Error(`Error del SII al obtener token: ${error.response.status} - ${error.response.statusText}`);
+      }
+
+      throw new Error(`Error de conexión con SII: ${error.message}`);
     }
   }
 

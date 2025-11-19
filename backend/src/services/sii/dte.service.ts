@@ -85,7 +85,8 @@ export class DTEService {
   }
 
   /**
-   * Genera el XML del DTE según formato SII
+   * Genera el XML del DTE según formato SII oficial
+   * Cumple con: Schema EnvioDTE_v10.xsd del SII
    */
   generateDTEXML(dteData: DTEData): string {
     const { tipoDocumento, folio, fechaEmision, receptor, detalles, referencias } = dteData;
@@ -93,62 +94,75 @@ export class DTEService {
     // Obtener datos de la empresa
     const empresa: any = this.getEmpresaData();
 
-    // Calcular totales
+    // Validar que el RUT esté en formato correcto (sin puntos, con guión)
+    const rutEmisor = this.formatRUT(empresa.rut);
+    const rutReceptor = this.formatRUT(receptor.rut);
+
+    // Calcular totales - IMPORTANTE: SII usa enteros sin decimales
     let montoNeto = 0;
-    const detallesXML = detalles.map((detalle) => {
-      const montoLinea = detalle.cantidad * detalle.precioUnitario;
-      const descuento = detalle.descuentoMonto || 0;
+    const detallesXML = detalles.map((detalle, index) => {
+      const montoLinea = Math.round(detalle.cantidad * detalle.precioUnitario);
+      const descuento = Math.round(detalle.descuentoMonto || 0);
       const montoNetoLinea = montoLinea - descuento;
       montoNeto += montoNetoLinea;
 
       return {
-        NroLinDet: detalle.numeroLinea,
-        NmbItem: detalle.nombreItem,
-        DscItem: detalle.descripcion || '',
+        NroLinDet: index + 1, // Numeración secuencial automática
+        NmbItem: detalle.nombreItem.substring(0, 80), // Máx 80 caracteres
+        ...(detalle.descripcion && { DscItem: detalle.descripcion.substring(0, 1000) }),
         QtyItem: detalle.cantidad,
-        UnmdItem: detalle.unidadMedida || 'UN',
-        PrcItem: detalle.precioUnitario.toFixed(2),
-        ...(detalle.descuentoMonto && { DescuentoMonto: detalle.descuentoMonto.toFixed(2) }),
-        MontoItem: montoNetoLinea.toFixed(0),
+        ...(detalle.unidadMedida && { UnmdItem: detalle.unidadMedida }),
+        PrcItem: Math.round(detalle.precioUnitario), // Precio entero
+        ...(descuento > 0 && { DescuentoMonto: descuento }),
+        MontoItem: montoNetoLinea, // Monto total de la línea
       };
     });
 
     const iva = Math.round(montoNeto * 0.19);
-    const montoTotal = Math.round(montoNeto) + iva;
+    const montoTotal = montoNeto + iva;
 
-    // Construir el documento XML según formato SII
+    // Fecha y hora actual para timestamp
+    const now = new Date();
+    const tmstFirma = now.toISOString();
+
+    // Construir documento según esquema oficial SII
     const dteXML = {
       DTE: {
+        '@_xmlns': 'http://www.sii.cl/SiiDte',
         '@_version': '1.0',
         Documento: {
-          '@_ID': `DTE-${tipoDocumento}-${folio}`,
+          '@_ID': `T${tipoDocumento}F${folio}`,
           Encabezado: {
             IdDoc: {
               TipoDTE: tipoDocumento,
               Folio: folio,
               FchEmis: fechaEmision,
-              FmaPago: 1, // 1=Contado, 2=Crédito
-              FchVenc: fechaEmision,
+              ...(tipoDocumento !== 39 && tipoDocumento !== 41 && { // No aplica a boletas
+                FmaPago: 1, // 1=Contado, 2=Crédito, 3=Sin Costo
+              }),
+              ...(tipoDocumento === 33 && { // Solo para facturas
+                FchVenc: fechaEmision,
+              }),
             },
             Emisor: {
-              RUTEmisor: empresa.rut,
-              RznSoc: empresa.razon_social,
-              GiroEmis: empresa.giro,
-              Acteco: empresa.actividad_economica || '620200',
-              DirOrigen: empresa.direccion,
-              CmnaOrigen: empresa.comuna,
-              CiudadOrigen: empresa.ciudad,
+              RUTEmisor: rutEmisor,
+              RznSoc: empresa.razon_social.substring(0, 100),
+              GiroEmis: empresa.giro.substring(0, 80),
+              Acteco: parseInt(empresa.actividad_economica) || 620200,
+              DirOrigen: empresa.direccion.substring(0, 70),
+              CmnaOrigen: empresa.comuna.substring(0, 20),
+              CiudadOrigen: empresa.ciudad.substring(0, 20),
             },
             Receptor: {
-              RUTRecep: receptor.rut,
-              RznSocRecep: receptor.razonSocial,
-              GiroRecep: receptor.giro || 'Sin información',
-              DirRecep: receptor.direccion || 'Sin información',
-              CmnaRecep: receptor.comuna || 'Santiago',
-              CiudadRecep: receptor.ciudad || 'Santiago',
+              RUTRecep: rutReceptor,
+              RznSocRecep: receptor.razonSocial.substring(0, 100),
+              ...(receptor.giro && { GiroRecep: receptor.giro.substring(0, 40) }),
+              ...(receptor.direccion && { DirRecep: receptor.direccion.substring(0, 70) }),
+              ...(receptor.comuna && { CmnaRecep: receptor.comuna.substring(0, 20) }),
+              ...(receptor.ciudad && { CiudadRecep: receptor.ciudad.substring(0, 20) }),
             },
             Totales: {
-              MntNeto: Math.round(montoNeto),
+              MntNeto: montoNeto,
               TasaIVA: 19,
               IVA: iva,
               MntTotal: montoTotal,
@@ -161,17 +175,36 @@ export class DTEService {
               TpoDocRef: ref.tipoDocumento,
               FolioRef: ref.folio,
               FchRef: ref.fechaDocumento,
-              RazonRef: ref.razonReferencia || '',
+              ...(ref.razonReferencia && { RazonRef: ref.razonReferencia.substring(0, 90) }),
             })),
           }),
+          TmstFirma: tmstFirma,
         },
       },
     };
 
+    // Generar XML con namespace correcto
     const xmlString = this.xmlBuilder.build(dteXML);
     const xmlWithDeclaration = `<?xml version="1.0" encoding="ISO-8859-1"?>\n${xmlString}`;
 
+    console.log('✅ XML del DTE generado correctamente');
     return xmlWithDeclaration;
+  }
+
+  /**
+   * Formatea el RUT al formato SII: sin puntos, con guión
+   * Ejemplo: 12345678-9
+   */
+  private formatRUT(rut: string): string {
+    // Limpiar el RUT
+    const cleaned = rut.replace(/\./g, '').replace(/-/g, '').trim();
+
+    // Agregar guión antes del dígito verificador
+    if (cleaned.length >= 2) {
+      return cleaned.slice(0, -1) + '-' + cleaned.slice(-1);
+    }
+
+    return cleaned;
   }
 
   /**
@@ -280,27 +313,43 @@ export class DTEService {
 
   /**
    * Envía el DTE al SII
+   * Cumple con el esquema EnvioDTE_v10.xsd oficial
    */
-  async sendDTE(dteXml: string, rutEmisor: string, rutEnvia: string): Promise<{ trackId: string; estado: string }> {
+  async sendDTE(dteXml: string, rutEmisor: string, rutEnvia: string): Promise<{ trackId: string; estado: string; glosaEstado?: string }> {
     try {
       console.log('📤 Enviando DTE al SII...');
 
       // Obtener token de autenticación
       const token = await this.authService.getToken();
+      console.log('✅ Token obtenido para envío');
 
-      // Crear el sobre XML para el envío
+      // Obtener datos de empresa para resolución SII
+      const empresa: any = this.getEmpresaData();
+
+      // Extraer tipo de documento del XML
+      const parsed = this.xmlParser.parse(dteXml);
+      const tipoDTE = parsed.DTE?.Documento?.Encabezado?.IdDoc?.TipoDTE || 33;
+
+      // Formatear RUTs
+      const rutEmisorFormateado = this.formatRUT(rutEmisor);
+      const rutEnviaFormateado = this.formatRUT(rutEnvia);
+
+      // Fecha y hora actual en formato ISO
+      const tmstFirmaEnv = new Date().toISOString();
+
+      // Crear el sobre XML para el envío según esquema oficial
       const envioXml = `<?xml version="1.0" encoding="ISO-8859-1"?>
 <EnvioDTE xmlns="http://www.sii.cl/SiiDte" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sii.cl/SiiDte EnvioDTE_v10.xsd" version="1.0">
-  <SetDTE ID="SetDTE">
+  <SetDTE ID="SetDoc">
     <Caratula version="1.0">
-      <RutEmisor>${rutEmisor}</RutEmisor>
-      <RutEnvia>${rutEnvia}</RutEnvia>
+      <RutEmisor>${rutEmisorFormateado}</RutEmisor>
+      <RutEnvia>${rutEnviaFormateado}</RutEnvia>
       <RutReceptor>60803000-K</RutReceptor>
-      <FchResol>2014-08-22</FchResol>
-      <NroResol>80</NroResol>
-      <TmstFirmaEnv>${new Date().toISOString()}</TmstFirmaEnv>
+      <FchResol>${empresa.resolucion_sii || '2014-08-22'}</FchResol>
+      <NroResol>${empresa.codigo_sii || '80'}</NroResol>
+      <TmstFirmaEnv>${tmstFirmaEnv}</TmstFirmaEnv>
       <SubTotDTE>
-        <TpoDTE>33</TpoDTE>
+        <TpoDTE>${tipoDTE}</TpoDTE>
         <NroDTE>1</NroDTE>
       </SubTotDTE>
     </Caratula>
@@ -312,27 +361,65 @@ export class DTEService {
       const env = config.sii.environment as 'certificacion' | 'produccion';
       const uploadUrl = config.sii.urls[env].upload;
 
+      console.log(`🌐 Enviando a: ${uploadUrl}`);
+      console.log(`📋 Ambiente: ${env}`);
+
       const response = await axios.post(
         uploadUrl,
         envioXml,
         {
           headers: {
-            'Content-Type': 'application/xml',
+            'Content-Type': 'text/xml; charset=ISO-8859-1',
             'Cookie': `TOKEN=${token}`,
           },
+          timeout: 60000, // 60 segundos
         }
       );
 
-      // Parsear respuesta
-      const parsed = this.xmlParser.parse(response.data);
-      const trackId = parsed.RECEPCIONDTE?.TRACKID || '';
-      const estado = parsed.RECEPCIONDTE?.ESTADO || 'desconocido';
+      // Parsear respuesta del SII
+      const parsedResponse = this.xmlParser.parse(response.data);
 
-      console.log('✅ DTE enviado al SII. Track ID:', trackId);
+      // El SII puede responder en diferentes formatos
+      let trackId = parsedResponse.RECEPCIONDTE?.TRACKID
+                    || parsedResponse.RECEPCION_ENVIO?.TRACKID
+                    || parsedResponse['SII:RESPUESTA']?.['SII:RESP_BODY']?.TRACKID
+                    || '';
 
-      return { trackId, estado };
+      let estado = parsedResponse.RECEPCIONDTE?.ESTADO
+                   || parsedResponse.RECEPCION_ENVIO?.ESTADO
+                   || parsedResponse['SII:RESPUESTA']?.['SII:RESP_BODY']?.ESTADO
+                   || 'desconocido';
+
+      let glosaEstado = parsedResponse.RECEPCIONDTE?.GLOSA
+                        || parsedResponse.RECEPCION_ENVIO?.GLOSA
+                        || parsedResponse['SII:RESPUESTA']?.['SII:RESP_BODY']?.GLOSA;
+
+      if (!trackId) {
+        console.error('❌ Respuesta del SII sin Track ID:', JSON.stringify(parsedResponse, null, 2));
+        throw new Error('El SII no devolvió un Track ID. Revise la configuración de empresa y certificado');
+      }
+
+      console.log('✅ DTE enviado al SII exitosamente');
+      console.log(`📍 Track ID: ${trackId}`);
+      console.log(`📊 Estado: ${estado}${glosaEstado ? ' - ' + glosaEstado : ''}`);
+
+      return {
+        trackId,
+        estado,
+        glosaEstado,
+      };
     } catch (error: any) {
-      console.error('❌ Error al enviar DTE:', error.message);
+      console.error('❌ Error al enviar DTE al SII:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      if (error.response) {
+        const errorMsg = `Error HTTP ${error.response.status}: ${error.response.statusText}`;
+        throw new Error(errorMsg);
+      }
+
       throw new Error(`Error al enviar DTE al SII: ${error.message}`);
     }
   }
