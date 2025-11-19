@@ -14,6 +14,7 @@ import {
   LogOut,
   Settings,
   Building2,
+  BookOpen,
 } from 'lucide-react';
 import { notificacionesApi } from '../services/api';
 import NotificationBell from './NotificationBell';
@@ -40,6 +41,7 @@ const Layout = () => {
     { path: '/compras', icon: ShoppingCart, label: 'Compras y Gastos' },
     { path: '/recordatorios', icon: Bell, label: 'Recordatorios Tributarios' },
     { path: '/configuracion', icon: Building2, label: 'Configuración Empresa' },
+    { path: '/ayuda', icon: BookOpen, label: 'Centro de Ayuda' },
   ];
 
   const handleLogout = () => {

@@ -9,6 +9,7 @@ import ComprasList from './pages/ComprasList';
 import ComprasCreate from './pages/ComprasCreate';
 import Recordatorios from './pages/Recordatorios';
 import ConfiguracionEmpresa from './pages/ConfiguracionEmpresa';
+import Ayuda from './pages/Ayuda';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -45,6 +46,9 @@ function App() {
 
         {/* Configuración */}
         <Route path="configuracion" element={<ConfiguracionEmpresa />} />
+
+        {/* Ayuda */}
+        <Route path="ayuda" element={<Ayuda />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />
