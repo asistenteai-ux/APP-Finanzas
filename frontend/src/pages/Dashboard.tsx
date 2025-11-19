@@ -10,6 +10,7 @@ import {
 import { dteApi, comprasApi, recordatoriosApi } from '../services/api';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
+import InfoTooltip from '../components/InfoTooltip';
 
 const Dashboard = () => {
   const currentMonth = new Date();
@@ -159,10 +160,17 @@ const Dashboard = () => {
 
         {/* Cálculo IVA */}
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <DollarSign size={20} className="text-primary-600" />
-            Cálculo IVA (F29)
-          </h3>
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <DollarSign size={20} className="text-primary-600" />
+              Cálculo IVA (F29)
+            </h3>
+            <InfoTooltip
+              title="Formulario 29 - IVA Mensual"
+              content="El F29 es la declaración mensual de IVA. Muestra el IVA de tus ventas (débito fiscal) menos el IVA de tus compras (crédito fiscal). La diferencia es lo que debes pagar al SII cada mes."
+              type="help"
+            />
+          </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="text-sm text-gray-600">Débito Fiscal (IVA Ventas)</span>

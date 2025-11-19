@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, FileText, Receipt, FileX } from 'lucide-react';
 import { dteApi } from '../services/api';
+import { AyudaContable } from '../components/InfoTooltip';
+import { validarRUT, agregarGuionRUT } from '../utils/rut';
 
 interface DTECreateProps {
   tipo: number;
@@ -23,6 +25,8 @@ const DTECreate = ({ tipo }: DTECreateProps) => {
     direccion: '',
     comuna: '',
   });
+
+  const [rutError, setRutError] = useState('');
 
   const [detalles, setDetalles] = useState([
     { numeroLinea: 1, nombreItem: '', cantidad: 1, precioUnitario: 0 },
@@ -78,11 +82,49 @@ const DTECreate = ({ tipo }: DTECreateProps) => {
 
   const { neto, iva, total } = calcularTotal();
 
+  const getDocumentIcon = () => {
+    switch (tipo) {
+      case 33:
+        return <FileText className="text-blue-600" size={32} />;
+      case 39:
+        return <Receipt className="text-green-600" size={32} />;
+      case 61:
+        return <FileX className="text-orange-600" size={32} />;
+      default:
+        return <FileText className="text-gray-600" size={32} />;
+    }
+  };
+
+  const getDocumentHelp = () => {
+    switch (tipo) {
+      case 33:
+        return 'factura';
+      case 39:
+        return 'boleta';
+      case 61:
+        return 'nota-credito';
+      default:
+        return 'factura';
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Crear {tipoNombres[tipo]}</h2>
-        <p className="text-gray-600 mt-1">Folio: #{folioData?.data?.data?.nextFolio || '-'}</p>
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-white p-3 rounded-lg shadow-sm">
+              {getDocumentIcon()}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold text-gray-800">Crear {tipoNombres[tipo]}</h2>
+                <AyudaContable tipo={getDocumentHelp() as any} />
+              </div>
+              <p className="text-gray-600 mt-1">Folio: <span className="font-semibold text-primary-600">#{folioData?.data?.data?.nextFolio || '-'}</span></p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -94,12 +136,26 @@ const DTECreate = ({ tipo }: DTECreateProps) => {
               <label className="label">RUT</label>
               <input
                 type="text"
-                className="input"
-                placeholder="12.345.678-9"
+                className={`input ${rutError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="12345678-9"
                 value={receptor.rut}
-                onChange={(e) => setReceptor({ ...receptor, rut: e.target.value })}
+                onChange={(e) => {
+                  const rutFormateado = agregarGuionRUT(e.target.value);
+                  setReceptor({ ...receptor, rut: rutFormateado });
+
+                  if (rutFormateado.length >= 3) {
+                    if (!validarRUT(rutFormateado)) {
+                      setRutError('RUT inválido');
+                    } else {
+                      setRutError('');
+                    }
+                  } else {
+                    setRutError('');
+                  }
+                }}
                 required
               />
+              {rutError && <p className="text-sm text-red-600 mt-1">{rutError}</p>}
             </div>
             <div>
               <label className="label">Razón Social</label>

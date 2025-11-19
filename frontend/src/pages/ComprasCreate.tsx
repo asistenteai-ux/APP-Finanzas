@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { Save } from 'lucide-react';
+import { Save, ShoppingCart } from 'lucide-react';
 import { comprasApi } from '../services/api';
+import InfoTooltip, { AyudaContable } from '../components/InfoTooltip';
+import { validarRUT, agregarGuionRUT } from '../utils/rut';
 
 const ComprasCreate = () => {
   const navigate = useNavigate();
@@ -17,6 +19,8 @@ const ComprasCreate = () => {
     categoria: 'general',
     es_credito_fiscal: true,
   });
+
+  const [rutError, setRutError] = useState('');
 
   const createMutation = useMutation({
     mutationFn: comprasApi.create,
@@ -39,9 +43,16 @@ const ComprasCreate = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Registrar Compra o Gasto</h2>
-        <p className="text-gray-600 mt-1">Ingrese los datos del documento de compra</p>
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl border border-green-100">
+        <div className="flex items-center gap-4">
+          <div className="bg-white p-3 rounded-lg shadow-sm">
+            <ShoppingCart className="text-green-600" size={32} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Registrar Compra o Gasto</h2>
+            <p className="text-gray-600 mt-1">Ingrese los datos del documento de compra para llevar control de gastos y crédito fiscal</p>
+          </div>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -107,12 +118,26 @@ const ComprasCreate = () => {
               <label className="label">RUT Proveedor</label>
               <input
                 type="text"
-                className="input"
-                placeholder="12.345.678-9"
+                className={`input ${rutError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                placeholder="12345678-9"
                 value={formData.rut_proveedor}
-                onChange={(e) => setFormData({ ...formData, rut_proveedor: e.target.value })}
+                onChange={(e) => {
+                  const rutFormateado = agregarGuionRUT(e.target.value);
+                  setFormData({ ...formData, rut_proveedor: rutFormateado });
+
+                  if (rutFormateado.length >= 3) {
+                    if (!validarRUT(rutFormateado)) {
+                      setRutError('RUT inválido');
+                    } else {
+                      setRutError('');
+                    }
+                  } else {
+                    setRutError('');
+                  }
+                }}
                 required
               />
+              {rutError && <p className="text-sm text-red-600 mt-1">{rutError}</p>}
             </div>
             <div>
               <label className="label">Razón Social</label>
@@ -163,7 +188,9 @@ const ComprasCreate = () => {
                   className="w-4 h-4"
                 />
                 <span>Es crédito fiscal (IVA recuperable)</span>
+                <AyudaContable tipo="credito-fiscal" />
               </label>
+              <p className="text-sm text-gray-500 mt-1">Marca esta opción si el documento permite recuperar el IVA pagado</p>
             </div>
           </div>
 

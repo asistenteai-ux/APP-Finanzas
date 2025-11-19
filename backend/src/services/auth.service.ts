@@ -85,7 +85,7 @@ export class AuthService {
 
     // Actualizar último acceso
     this.db
-      .prepare('UPDATE usuarios SET ultimo_acceso = datetime("now") WHERE id = ?')
+      .prepare("UPDATE usuarios SET ultimo_acceso = datetime('now') WHERE id = ?")
       .run(usuario.id);
 
     // Generar token JWT
@@ -195,7 +195,7 @@ export class AuthService {
    */
   async crearAdminDefault() {
     const adminExiste = this.db
-      .prepare('SELECT id FROM usuarios WHERE rol = "admin"')
+      .prepare("SELECT id FROM usuarios WHERE rol = 'admin'")
       .get();
 
     if (!adminExiste) {
